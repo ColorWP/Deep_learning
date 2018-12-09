@@ -1,9 +1,31 @@
+'''
+output = netD(fake.detach()) 中的  detach()
+简单来说detach就是截断反向传播的梯度流
+
+我们看源码 或者pycharm中ctrl + 鼠标左键 点击detach() 来看它的注释
+
+detach = _add_docstr(_C._TensorBase.detach, r"""
+    Returns a new Tensor, detached from the current graph.
+
+    The result will never require gradient.
+
+    .. note::
+
+      Returned Tensor uses the same data tensor as the original one.
+      In-place modifications on either of them will be seen, and may trigger
+      errors in correctness checks.
+    """)
+
+原理：就是 将某个node变成不需要梯度的Varibale。因此当反向传播经过这个node时，梯度就不会从这个node往前面传播
+解释：GAN的G的更新，主要是GAN loss。就是G生成的fake图让D来判别，得到的损失，计算梯度进行反传。这个梯度只能影响G，不能影响D
+
+'''
+
 import argparse
 import torch
 import torchvision
 import torchvision.utils as vutils
 import torch.nn as nn
-from random import randint
 from model import NetD, NetG
 import os
 from datetime import datetime
@@ -44,14 +66,15 @@ dataloader = torch.utils.data.DataLoader(
 netG = NetG(opt.ngf, opt.nz).to(device)
 netD = NetD(opt.ndf).to(device)
 
-criterion = nn.BCELoss()
+criterion = nn.BCELoss()   # 二分类交叉熵
 optimizerG = torch.optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 optimizerD = torch.optim.Adam(netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 
-label = torch.FloatTensor(opt.batchSize)
+label = torch.FloatTensor(opt.batchSize)   # torch.Size([200])
 real_label = 1
 fake_label = 0
 
+time_start=datetime.now()
 for epoch in range(1, opt.epoch + 1):
     print(epoch)
     print('开始')
@@ -62,13 +85,15 @@ for epoch in range(1, opt.epoch + 1):
         optimizerD.zero_grad()
         ## 让D尽可能的把真图片判别为1
         imgs=imgs.to(device)
+        print('开始调用D')
         output = netD(imgs)
-        label.data.fill_(real_label)
+        label.data.fill_(real_label)  # 填充
         label=label.to(device)
         errD_real = criterion(output, label)
         errD_real.backward()
         ## 让D尽可能把假图片判别为0
         label.data.fill_(fake_label)
+        ## 随机生成数据
         noise = torch.randn(opt.batchSize, opt.nz, 1, 1)
         noise=noise.to(device)
         fake = netG(noise)  # 生成假图
@@ -90,8 +115,10 @@ for epoch in range(1, opt.epoch + 1):
 
         print('[%d/%d][%d/%d] Loss_D: %.3f Loss_G %.3f'
               % (epoch, opt.epoch, i, len(dataloader), errD.item(), errG.item()))
+
         if not os.path.exists('{}{}/'.format(opt.outf, str(epoch))):
             os.mkdir('{}{}/'.format(opt.outf, str(epoch)))
+
         for i in range(opt.batchSize):
             vutils.save_image(fake.data[i],
                               '{}{}/fake_samples_epoch_{}.png'.format(opt.outf, str(epoch),str(i)),
@@ -101,3 +128,7 @@ for epoch in range(1, opt.epoch + 1):
     print('第{}次 执行时间为{} 平均每次时间为{}'.format(epoch,c_time,c_time/len(dataloader)))
     torch.save(netG.state_dict(), r'{}{}/netG_{}.pth'.format(opt.outf, str(epoch),epoch))
     torch.save(netD.state_dict(), r'{}{}/netD_{}.pth'.format(opt.outf, str(epoch),epoch))
+time_end=datetime.now()
+all_time=time_end-time_start
+print()
+print('总共花费时间为{} 平均每个epoch花费时间为{}'.format(all_time,all_time/opt.epoch))
