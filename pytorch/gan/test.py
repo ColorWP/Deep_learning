@@ -30,17 +30,18 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 netG = NetG(opt.ngf, opt.nz).to(device)
 netD = NetD(opt.ndf).to(device)
 
-noise = torch.randn(opt.batchSize, opt.nz, 1, 1)
 
 netG.load_state_dict(torch.load('./moxing/netG_20.pth'))
 netD.load_state_dict(torch.load('./moxing/netD_20.pth'))
 
-print(111)
-
-fake=netG(noise)
-for i in range(opt.batchSize):
-    vutils.save_image(fake.data[i],
-                      '{}fake_samples_epoch_{}.png'.format(opt.outf, str(i)),
-                      normalize=True)
+img_num=300   # 生成多少图片数据
+# 这里生成图片
+for j in range(img_num):
+    noise = torch.randn(opt.batchSize, opt.nz, 1, 1)
+    fake = netG(noise)
+    for i in range(opt.batchSize):
+        vutils.save_image(fake.data[i],
+                          '{}fake_samples_epoch_{}.png'.format(opt.outf, str(j)),
+                          normalize=True)
 
 
