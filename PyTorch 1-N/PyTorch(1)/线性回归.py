@@ -21,7 +21,7 @@ x_train = torch.from_numpy(x_train)
 y_train = torch.from_numpy(y_train)
 
 
-# 写框架  LinearRegression
+# 框架  LinearRegression
 class MyNet(torch.nn.Module):
     def __init__(self):
         super(MyNet, self).__init__()
@@ -32,7 +32,7 @@ class MyNet(torch.nn.Module):
 model = MyNet()
 
 # 定义损失和优化
-criterion = torch.nn.MSELoss()  # 交叉熵
+criterion = torch.nn.MSELoss()  # 均方误差
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 
