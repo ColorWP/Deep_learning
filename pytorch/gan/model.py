@@ -1,4 +1,15 @@
-'''对抗神经网络'''
+'''
+对抗神经网络gan
+
+这里我没有使用池化操作
+原因是池化操作可能会丢失一些比较重要的数据
+
+众所周知了  池化会减小图片尺寸  一般有2中池化操作：
+平均池化：计算图像区域的平均值作为该区域池化后的值。  AvgPool2d(2, stride=2)
+最大池化：选图像区域的最大值作为该区域池化后的值。    MaxPool2d(kernel_size=2)
+
+当然 也可能会过拟合  所以如果有充足时间 可以2种方法都试试  一种加池化，一种不加池化  看看效果
+'''
 
 import torch.nn as nn
 # 定义生成器网络G
@@ -73,11 +84,13 @@ class NetD(nn.Module):
             nn.BatchNorm2d(ndf * 8),
             nn.LeakyReLU(0.2, inplace=True)
         )
-        # layer5 输出一个数(概率)
+        # layer5 torch.Size([200, 1, 1, 1])   输出一个数(概率) torch.Size([200, 1, 1, 1])
         self.layer5 = nn.Sequential(
             nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
             nn.Sigmoid()
+
         )
+
 
     # 定义NetD的前向传播
     def forward(self,x):
@@ -86,21 +99,6 @@ class NetD(nn.Module):
         out = self.layer3(out)
         out = self.layer4(out)
         out = self.layer5(out)
+        print(out.size())
         return out
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
