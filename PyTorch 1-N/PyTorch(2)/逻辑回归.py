@@ -72,7 +72,7 @@ class MyNet(torch.nn.Module):
 model = MyNet(28*28, 10).to(device)  # 图片大小是28x28
 
 # 损失及优化
-criterion = torch.nn.CrossEntropyLoss()  # 交叉熵
+criterion = torch.nn.CrossEntropyLoss()  # 多分类用的交叉熵损失函数
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
 
