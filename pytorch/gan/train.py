@@ -1,4 +1,19 @@
 '''
+
+1.固定生成器G，训练鉴别器D，optimizerD.zero_grad()
+    1.来一张真图片 传到D网络得到output 并进行label=1操作，之后进行二分类交叉熵得到lossD_real，再进行反向传播
+    2.把label=0，随机生成数据，并用G网络 生成一张假图，通过D网络 得到output 此时需要netD(fake.detach())
+        2.1 意思是  当反向传播经过这个node时，梯度就不会从这个node往前面传播
+        2.2 简单说  就是之后反向传播时，不会对G网络进行训练，只优化D网络
+    3.在进行二分类交叉熵得到lossD_fake 再进行反向传播 之后lossD相加 进行优化
+
+2.固定鉴别器D，训练生成器G，optimizerG.zero_grad()
+    1.让D尽可能把G生成的假图判别为1
+    2.先让label=1,将假图传入D网络进行鉴别得到output 再进行二分类交叉熵 得到G的lossG 之后反向传播 优化
+
+
+drop_last 不够一个batch时 是否丢弃数据
+
 output = netD(fake.detach()) 中的  detach()
 简单来说detach就是截断反向传播的梯度流
 
@@ -18,6 +33,9 @@ detach = _add_docstr(_C._TensorBase.detach, r"""
 
 原理：就是 将某个node变成不需要梯度的Varibale。因此当反向传播经过这个node时，梯度就不会从这个node往前面传播
 解释：GAN的G的更新，主要是GAN loss。就是G生成的fake图让D来判别，得到的损失，计算梯度进行反传。这个梯度只能影响G，不能影响D
+
+cpu: 总共花费时间为18:39:54.992707 平均每个epoch花费时间为0:46:39.791363
+
 
 '''
 
@@ -39,7 +57,7 @@ parser.add_argument('--imageSize', type=int, default=96)
 parser.add_argument('--nz', type=int, default=100, help='size of the latent z vector')
 parser.add_argument('--ngf', type=int, default=64)
 parser.add_argument('--ndf', type=int, default=64)
-parser.add_argument('--epoch', type=int, default=20, help='number of epochs to train for')
+parser.add_argument('--epoch', type=int, default=24, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, default=0.0002')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--data_path', default='/media/colorwp/空间/01wp/d-python/cx/content/pytorch/01/', help='folder to train data')
@@ -97,7 +115,7 @@ for epoch in range(1, opt.epoch + 1):
         noise = torch.randn(opt.batchSize, opt.nz, 1, 1)
         noise=noise.to(device)
         fake = netG(noise)  # 生成假图
-        output = netD(fake.detach()) #避免梯度传到G，因为G不用更新
+        output = netD(fake.detach()) # 避免梯度传到G，因为G不用更新
         errD_fake = criterion(output, label)
         errD_fake.backward()
         errD = errD_fake + errD_real
