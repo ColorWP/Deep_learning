@@ -88,7 +88,6 @@ class NetD(nn.Module):
         self.layer5 = nn.Sequential(
             nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
             nn.Sigmoid()
-
         )
 
 
@@ -99,6 +98,13 @@ class NetD(nn.Module):
         out = self.layer3(out)
         out = self.layer4(out)
         out = self.layer5(out)
-        print(out.size())
+        # print(out)  # 查看数据是否会变
+
+        # 这里将torch.Size([200, 1, 1, 1])  转化为  torch.Size([200])
+        # 与后面的label 进行二分类交叉熵损失
+        out=out.view(out.size(0))
+        # print(out)  # 查看数据是否会改变
+        # print(out.size())
+
         return out
 
